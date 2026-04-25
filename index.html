@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Công Sở Sinh Tồn - Đào tạo Kỹ Năng Mềm</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['"Inter"', 'sans-serif'],
+                    },
+                    colors: {
+                        office: {
+                            bg: '#F3F4F6',
+                            card: '#FFFFFF',
+                            primary: '#4F46E5', // Indigo
+                            success: '#10B981', // Emerald
+                            danger: '#EF4444', // Red
+                            warning: '#F59E0B', // Amber
+                            dark: '#111827'
+                        }
+                    },
+                    animation: {
+                        'slide-up': 'slideUp 0.4s ease-out forwards',
+                        'bounce-slight': 'bounceSlight 2s infinite ease-in-out',
+                        'pop': 'pop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards',
+                    },
+                    keyframes: {
+                        slideUp: {
+                            '0%': { opacity: '0', transform: 'translateY(20px)' },
+                            '100%': { opacity: '1', transform: 'translateY(0)' },
+                        },
+                        bounceSlight: {
+                            '0%, 100%': { transform: 'translateY(0)' },
+                            '50%': { transform: 'translateY(-5px)' },
+                        },
+                        pop: {
+                            '0%': { opacity: '0', transform: 'scale(0.8)' },
+                            '100%': { opacity: '1', transform: 'scale(1)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #F3F4F6;
+            color: #111827;
+            background-image: radial-gradient(#E5E7EB 1px, transparent 1px);
+            background-size: 20px 20px;
+        }
+        .stat-bar {
+            transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .screen { display: none; }
+        .screen.active { display: flex; animation: slideUp 0.4s ease-out forwards; }
+        
+        /* Chat bubble styles */
+        .chat-bubble {
+            position: relative;
+            background: white;
+            border-radius: 1rem;
+            border-bottom-left-radius: 0.25rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+        .chat-bubble::before {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: -10px;
+            width: 20px;
+            height: 20px;
+            background: white;
+            border-bottom-right-radius: 100%;
+            clip-path: polygon(100% 0, 100% 100%, 0 100%);
+        }
+
+        .btn-option {
+            transition: all 0.2s;
+        }
+        .btn-option:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: #4F46E5;
+        }
+        .btn-option:active {
+            transform: translateY(0);
+        }
+        
+        #lesson-modal {
+            backdrop-filter: blur(4px);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 selection:bg-office-primary selection:text-white">
+
+    <main class="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden relative border border-gray-100 flex flex-col h-[85vh] max-h-[800px]">
+        
+        <!-- HEADER STATS (Hidden on Landing) -->
+        <header id="stats-header" class="hidden bg-office-dark text-white p-4 shrink-0 shadow-md relative z-20">
+            <div class="flex justify-between items-center mb-3">
+                <span class="font-bold text-sm tracking-wide"><i class="fa-solid fa-briefcase mr-1 text-office-primary"></i> VĂN PHÒNG</span>
+                <span class="text-xs font-semibold bg-gray-700 px-2 py-1 rounded-full text-gray-300" id="day-counter">Ngày 1/4</span>
+            </div>
+            
+            <div class="space-y-2.5">
+                <!-- Sếp -->
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-user-tie w-5 text-center text-blue-400 text-sm"></i>
+                    <div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="stat-boss" class="h-full bg-blue-500 stat-bar" style="width: 50%"></div>
+                    </div>
+                </div>
+                <!-- Team -->
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-users w-5 text-center text-green-400 text-sm"></i>
+                    <div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="stat-team" class="h-full bg-green-500 stat-bar" style="width: 50%"></div>
+                    </div>
+                </div>
+                <!-- Năng lượng -->
+                <div class="flex items-center gap-2">
+                    <i class="fa-solid fa-battery-full w-5 text-center text-yellow-400 text-sm"></i>
+                    <div class="flex-1 h-2 bg-gray-700 rounded-full overflow-hidden">
+                        <div id="stat-energy" class="h-full bg-yellow-400 stat-bar" style="width: 100%"></div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- CONTENT AREA -->
+        <div class="flex-1 overflow-y-auto bg-gray-50 relative p-4" id="content-area">
+            
+            <!-- SCREEN 1: LANDING -->
+            <div id="screen-landing" class="screen active flex-col items-center justify-center text-center h-full px-2">
+                <div class="w-24 h-24 bg-indigo-100 text-office-primary rounded-full flex items-center justify-center text-5xl mb-6 shadow-inner animate-bounce-slight">
+                    <i class="fa-solid fa-building-user"></i>
+                </div>
+                <h1 class="text-3xl font-extrabold text-gray-900 tracking-tight mb-3">Công Sở<br><span class="text-office-primary">Sinh Tồn</span></h1>
+                <p class="text-gray-500 text-sm mb-8 leading-relaxed max-w-[280px]">
+                    Chào mừng bạn đến với ngày đầu đi làm! Mọi quyết định của bạn sẽ phản ánh độ chuyên nghiệp và EQ chốn công sở. Cố gắng sống sót qua thời gian thử việc nhé!
+                </p>
+                <button onclick="startGame()" class="w-full bg-office-primary text-white font-bold py-4 rounded-xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors flex items-center justify-center gap-2">
+                    Nhận Việc Ngay <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+
+            <!-- SCREEN 2: GAMEPLAY -->
+            <div id="screen-game" class="screen flex-col h-full w-full">
+                <!-- Situation Context -->
+                <div class="text-center mb-6 mt-2">
+                    <span id="sit-tag" class="text-xs font-bold uppercase tracking-wider text-office-primary bg-indigo-100 px-3 py-1 rounded-full">Kỹ năng giao tiếp</span>
+                </div>
+
+                <!-- Chat Scenario -->
+                <div class="flex items-end gap-3 mb-8">
+                    <div class="relative shrink-0">
+                        <img id="char-avatar" src="https://i.pravatar.cc/150?u=boss" alt="Avatar" class="w-12 h-12 rounded-full border-2 border-white shadow-sm object-cover">
+                        <div class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full"></div>
+                    </div>
+                    <div class="flex-1">
+                        <p id="char-name" class="text-xs text-gray-500 font-medium mb-1 ml-1">Sếp Trực Tiếp</p>
+                        <div class="chat-bubble p-4 text-sm text-gray-800 leading-relaxed border border-gray-100">
+                            <p id="sit-text">"Em ơi, 5h30 chiều nay gửi anh bản kế hoạch chạy sự kiện luôn nhé. Anh biết là hơi gấp nhưng cố giúp anh."</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Options -->
+                <div id="options-container" class="flex flex-col gap-3 mt-auto pb-4">
+                    <!-- Buttons injected via JS -->
+                </div>
+            </div>
+
+            <!-- SCREEN 3: RESULTS -->
+            <div id="screen-result" class="screen flex-col h-full w-full items-center justify-center text-center">
+                <i id="final-icon" class="fa-solid fa-trophy text-6xl text-yellow-400 mb-6 drop-shadow-md"></i>
+                <h2 id="final-title" class="text-2xl font-bold text-gray-900 mb-2">Vượt Qua Thử Việc!</h2>
+                <p id="final-desc" class="text-gray-600 text-sm mb-6 leading-relaxed">
+                    Bạn đã chứng minh được sự chuyên nghiệp, EQ cao và khả năng xử lý vấn đề tuyệt vời.
+                </p>
+                
+                <div class="bg-white rounded-xl shadow-sm border border-gray-100 w-full p-4 mb-8 text-left">
+                    <h3 class="font-bold text-sm text-gray-900 border-b pb-2 mb-3">Chỉ số đánh giá cuối cùng:</h3>
+                    <div class="space-y-3 text-sm">
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600"><i class="fa-solid fa-user-tie text-blue-500 mr-2"></i>Tín nhiệm từ Sếp</span>
+                            <span id="res-boss" class="font-bold">Tốt</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600"><i class="fa-solid fa-users text-green-500 mr-2"></i>Hòa đồng với Team</span>
+                            <span id="res-team" class="font-bold">Khá</span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-gray-600"><i class="fa-solid fa-battery-full text-yellow-500 mr-2"></i>Quản lý Năng lượng</span>
+                            <span id="res-energy" class="font-bold">Cạn kiệt</span>
+                        </div>
+                    </div>
+                </div>
+
+                <button onclick="location.reload()" class="w-full bg-gray-900 text-white font-bold py-4 rounded-xl hover:bg-gray-800 transition-colors">
+                    Chơi Lại Từ Đầu
+                </button>
+            </div>
+
+        </div>
+
+        <!-- LESSON MODAL (Overlay) -->
+        <div id="lesson-modal" class="fixed inset-0 bg-gray-900/40 z-50 hidden flex-col items-center justify-end sm:justify-center p-4">
+            <div class="bg-white w-full max-w-md rounded-t-2xl sm:rounded-2xl p-6 shadow-2xl transform translate-y-full transition-transform duration-300" id="lesson-card">
+                
+                <div class="flex items-center gap-3 mb-4">
+                    <div id="lesson-icon-box" class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xl shrink-0">
+                        <i id="lesson-icon" class="fa-solid fa-check"></i>
+                    </div>
+                    <div>
+                        <h3 id="lesson-title" class="font-bold text-gray-900">Xử lý tuyệt vời!</h3>
+                        <p class="text-xs font-semibold text-office-primary uppercase tracking-wide">Bài học rút ra</p>
+                    </div>
+                </div>
+                
+                <p id="lesson-desc" class="text-gray-600 text-sm leading-relaxed mb-6 bg-gray-50 p-4 rounded-xl border border-gray-100">
+                    Nội dung bài học chuyên môn ở đây.
+                </p>
+
+                <!-- Impact visualizer -->
+                <div class="flex gap-2 mb-6" id="impact-tags">
+                    <!-- e.g. <span class="bg-blue-100 text-blue-700 text-xs px-2 py-1 rounded font-bold">+ Sếp</span> -->
+                </div>
+
+                <button onclick="nextScenario()" class="w-full bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors">
+                    Tiếp Tục Làm Việc
+                </button>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // Game State
+        let stats = {
+            boss: 50,
+            team: 50,
+            energy: 100
+        };
+        let currentDay = 0;
+
+        // Scenarios Data - Specifically tailored for Soft Skills training
+        const scenarios = [
+            {
+                tag: "Quản Lý Thời Gian & Từ Chối",
+                character: { name: "Anh Tú (Trưởng Phòng)", avatar: "https://i.pravatar.cc/150?u=boss", role: "boss" },
+                text: "Bây giờ là 5h15 chiều Thứ 6. Anh Tú gửi tin nhắn: <i>'Em ơi, đang tiện tay làm nốt cho anh cái báo cáo tuần để anh gửi Ban Giám Đốc nhé, làm nhanh chắc 1 tiếng là xong.'</i>",
+                options: [
+                    {
+                        text: "Dạ vâng anh, để em làm cố cho xong rồi về ạ.",
+                        impact: { boss: 15, team: 0, energy: -30 },
+                        lesson: {
+                            isGood: false,
+                            title: "Mất cân bằng Work-Life",
+                            desc: "Việc luôn nói 'Có' khiến bạn được sếp ưu ái nhất thời, nhưng dẫn đến kiệt sức (Burnout). Hơn nữa, làm gấp trong lúc mệt mỏi dễ dẫn đến sai sót. Kỹ năng thiết lập ranh giới (Boundary setting) rất quan trọng."
+                        }
+                    },
+                    {
+                        text: "Dạ anh, file này hơi nhiều data, nếu làm gấp dễ sai số. Sáng Thứ 2 em làm sớm gửi anh trước 10h được không ạ?",
+                        impact: { boss: 5, team: 0, energy: 0 },
+                        lesson: {
+                            isGood: true,
+                            title: "Từ chối khéo léo (Assertive Communication)",
+                            desc: "Tuyệt vời! Bạn không nói 'Không' thẳng thừng mà đưa ra LÝ DO CHÍNH ĐÁNG (sợ sai số) và GIẢI PHÁP THAY THẾ (gửi sáng Thứ 2). Sếp chuyên nghiệp sẽ đánh giá cao sự rõ ràng này."
+                        }
+                    },
+                    {
+                        text: "Em sắp đến giờ tan làm rồi anh ơi, thứ 2 em làm nhé.",
+                        impact: { boss: -20, team: 0, energy: 10 },
+                        lesson: {
+                            isGood: false,
+                            title: "Thiếu khéo léo",
+                            desc: "Dù bạn có quyền về đúng giờ, nhưng cách nói này quá trực diện và thiếu tính xây dựng. Nên thể hiện thái độ hợp tác bằng cách đề xuất thời hạn hoàn thành rõ ràng vào ngày làm việc tiếp theo."
+                        }
+                    }
+                ]
+            },
+            {
+                tag: "Xử Lý Sự Cố & Chịu Trách Nhiệm",
+                character: { name: "System Alert", avatar: "https://i.pravatar.cc/150?u=alert", role: "system" },
+                text: "LÃO HÓA TÂM HỒN: Bạn phát hiện ra mình vừa lỡ tay Forward một email có đính kèm file báo giá nội bộ cho khách hàng thay vì gửi file Public. Khách hàng chưa phản hồi.",
+                options: [
+                    {
+                        text: "Im lặng. Vào hệ thống thu hồi (recall) email ngay lập tức và hy vọng khách chưa kịp đọc.",
+                        impact: { boss: -10, team: -10, energy: -20 },
+                        lesson: {
+                            isGood: false,
+                            title: "Rủi ro che giấu sai lầm",
+                            desc: "Tính năng Recall email ít khi hoạt động hoàn hảo. Nếu che giấu và khách hàng phát hiện, công ty sẽ rơi vào thế bị động. Nguyên tắc đi làm: Sai lầm không đáng sợ bằng thái độ che giấu."
+                        }
+                    },
+                    {
+                        text: "Chụp ảnh màn hình, gửi ngay cho Sếp/Quản lý báo cáo sự cố và xin ý kiến giải quyết.",
+                        impact: { boss: 20, team: 0, energy: -5 },
+                        lesson: {
+                            isGood: true,
+                            title: "Nguyên tắc Leo thang vấn đề (Escalation)",
+                            desc: "Rất chính xác! Khi xảy ra sự cố vượt ngoài thẩm quyền, bạn CẦN báo cáo ngay lập tức cho cấp trên. Họ có kinh nghiệm xử lý khủng hoảng và cần thông tin sớm nhất để bảo vệ công ty."
+                        }
+                    },
+                    {
+                        text: "Gửi mail thứ 2 cho khách bảo là 'File ban nãy bị lỗi, anh/chị xóa đi nhé' rồi đính kèm file mới.",
+                        impact: { boss: -15, team: 0, energy: -10 },
+                        lesson: {
+                            isGood: false,
+                            title: "Xử lý lấp liếm thiếu chuyên nghiệp",
+                            desc: "Khách hàng đủ thông minh để mở file đầu tiên xem có gì bí mật mà bạn bảo 'lỗi'. Tự ý xử lý sự cố liên quan đến bảo mật thông tin nội bộ mà không báo cấp trên là tối kỵ."
+                        }
+                    }
+                ]
+            },
+            {
+                tag: "Làm Việc Nhóm (Teamwork)",
+                character: { name: "Mai (Đồng Nghiệp)", avatar: "https://i.pravatar.cc/150?u=mai", role: "team" },
+                text: "Nhóm bạn có một task chung. Mai nhận phần Research nhưng sát deadline 1 ngày vẫn chưa thấy đâu. Nhắn tin thì Mai đáp: <i>'Tớ bận quá chưa đụng tới, cậu gánh giúp tớ tí đi.'</i>",
+                options: [
+                    {
+                        text: "Tặc lưỡi làm luôn phần của Mai cho xong việc, vì sợ ảnh hưởng điểm số chung của cả nhóm.",
+                        impact: { boss: 0, team: 15, energy: -40 },
+                        lesson: {
+                            isGood: false,
+                            title: "Hiệu ứng Người gánh team (Enabling)",
+                            desc: "Bạn có thể hoàn thành việc hôm nay, nhưng sẽ tạo tiền lệ xấu cho Mai tiếp tục 'ký sinh'. Đồng thời năng lượng của bạn sẽ cạn kiệt. Làm việc nhóm không phải là làm thay."
+                        }
+                    },
+                    {
+                        text: "Tức giận cap màn hình gửi vào group chung có sếp để 'bóc phốt' Mai không làm việc.",
+                        impact: { boss: -10, team: -30, energy: 0 },
+                        lesson: {
+                            isGood: false,
+                            title: "Xung đột thiếu xây dựng",
+                            desc: "Dù bạn đúng lý, nhưng cách làm bêu rếu nơi công cộng (public shaming) sẽ phá vỡ hoàn toàn hòa khí team. Sếp cũng không thích những nhân viên tạo ra drama."
+                        }
+                    },
+                    {
+                        text: "Từ chối khéo: 'Tớ cũng full task rồi. Cậu cố gắng làm phần Core trước, nếu vướng chỗ nào tớ hỗ trợ chút thôi'. Đồng thời Note lại tình hình tiến độ chung.",
+                        impact: { boss: 10, team: -5, energy: -5 },
+                        lesson: {
+                            isGood: true,
+                            title: "Giao tiếp thẳng thắn và rành mạch",
+                            desc: "Chuẩn! Bạn bảo vệ được giới hạn công việc của mình, thúc đẩy đồng nghiệp có trách nhiệm, nhưng vẫn giữ tinh thần hỗ trợ (support) đúng nghĩa chứ không làm thay."
+                        }
+                    }
+                ]
+            },
+            {
+                tag: "Giao Tiếp & Lắng Nghe",
+                character: { name: "Chị Lan (Kế toán trưởng)", avatar: "https://i.pravatar.cc/150?u=lan", role: "team" },
+                text: "Bạn mang bộ chứng từ sang phòng Kế toán. Chị Lan liếc nhìn rồi gắt: <i>'Làm giấy tờ kiểu gì sai hết định dạng rồi, về làm lại đi, phòng này không rảnh đi sửa lỗi!'</i>",
+                options: [
+                    {
+                        text: "Dạ vâng, chị cho em xin lại để em sửa ạ. (Nhưng trong lòng ấm ức mang về tự mò).",
+                        impact: { boss: 0, team: 5, energy: -15 },
+                        lesson: {
+                            isGood: false,
+                            title: "Lắng nghe thụ động",
+                            desc: "Thái độ ngoan ngoãn là tốt, nhưng nếu bạn cầm về mà không biết sai ở đâu, bạn sẽ mất thời gian làm sai thêm lần nữa. Cần chủ động hỏi rõ ràng."
+                        }
+                    },
+                    {
+                        text: "Thái độ lại: 'Anh Tú sếp em bảo làm form này, chị có gì thắc mắc gọi sếp em nhé.'",
+                        impact: { boss: -15, team: -40, energy: 0 },
+                        lesson: {
+                            isGood: false,
+                            title: "Phản ứng phòng thủ (Defensive)",
+                            desc: "Lôi sếp ra làm 'bia đỡ đạn' và cãi tay đôi với phòng ban khác là tối kỵ chốn công sở. Điều này thể hiện sự thiếu trưởng thành trong giao tiếp."
+                        }
+                    },
+                    {
+                        text: "Bình tĩnh mỉm cười: 'Dạ do em người mới chưa nắm rõ. Chị chỉ giúp em phần này đang sai form quy định nào để em nốt lại mốt không sai nữa ạ.'",
+                        impact: { boss: 10, team: 20, energy: 0 },
+                        lesson: {
+                            isGood: true,
+                            title: "Tiếp nhận phản hồi (Handling Feedback)",
+                            desc: "Cực kỳ xuất sắc! Dù đối phương nóng nảy, bạn vẫn giữ thái độ khiêm tốn (em là người mới), hạ nhiệt tình huống và chuyển hướng sang mục tiêu giải quyết vấn đề (hỏi xem sai ở đâu)."
+                        }
+                    }
+                ]
+            }
+        ];
+
+        // DOM Elements
+        const screens = {
+            landing: document.getElementById('screen-landing'),
+            game: document.getElementById('screen-game'),
+            result: document.getElementById('screen-result')
+        };
+        const statsHeader = document.getElementById('stats-header');
+        
+        // Modal
+        const modal = document.getElementById('lesson-modal');
+        const lessonCard = document.getElementById('lesson-card');
+        
+        function switchScreen(screenName) {
+            Object.values(screens).forEach(screen => screen.classList.remove('active'));
+            screens[screenName].classList.add('active');
+        }
+
+        function updateStatsUI() {
+            // Cap stats between 0 and 100
+            stats.boss = Math.max(0, Math.min(100, stats.boss));
+            stats.team = Math.max(0, Math.min(100, stats.team));
+            stats.energy = Math.max(0, Math.min(100, stats.energy));
+
+            document.getElementById('stat-boss').style.width = `${stats.boss}%`;
+            document.getElementById('stat-team').style.width = `${stats.team}%`;
+            document.getElementById('stat-energy').style.width = `${stats.energy}%`;
+            
+            // Color shifts based on low energy
+            const energyBar = document.getElementById('stat-energy');
+            if(stats.energy <= 20) { energyBar.className = "h-full bg-red-500 stat-bar"; }
+            else if(stats.energy <= 50) { energyBar.className = "h-full bg-orange-400 stat-bar"; }
+            else { energyBar.className = "h-full bg-yellow-400 stat-bar"; }
+        }
+
+        function startGame() {
+            statsHeader.classList.remove('hidden');
+            switchScreen('game');
+            renderScenario();
+        }
+
+        function renderScenario() {
+            if (currentDay >= scenarios.length) {
+                endGame();
+                return;
+            }
+
+            const s = scenarios[currentDay];
+            document.getElementById('day-counter').innerText = `Tình huống ${currentDay + 1}/${scenarios.length}`;
+            document.getElementById('sit-tag').innerText = s.tag;
+            document.getElementById('char-name').innerText = s.character.name;
+            document.getElementById('char-avatar').src = s.character.avatar;
+            document.getElementById('sit-text').innerHTML = s.text;
+
+            const optsContainer = document.getElementById('options-container');
+            optsContainer.innerHTML = '';
+            
+            // Animation reset
+            optsContainer.style.opacity = 0;
+            setTimeout(() => {
+                s.options.forEach((opt, idx) => {
+                    const btn = document.createElement('button');
+                    btn.className = 'btn-option bg-white border border-gray-200 text-left p-4 rounded-xl text-sm font-medium text-gray-700 hover:text-office-primary focus:outline-none focus:ring-2 focus:ring-office-primary/50 relative overflow-hidden group';
+                    btn.onclick = () => handleChoice(opt);
+                    
+                    // Add A/B/C labels
+                    const labels = ['A', 'B', 'C'];
+                    btn.innerHTML = `
+                        <div class="flex gap-3 items-start">
+                            <span class="w-6 h-6 rounded bg-gray-100 text-gray-500 flex items-center justify-center text-xs font-bold shrink-0 group-hover:bg-indigo-100 group-hover:text-office-primary transition-colors">${labels[idx]}</span>
+                            <span class="leading-relaxed">${opt.text}</span>
+                        </div>
+                    `;
+                    optsContainer.appendChild(btn);
+                });
+                optsContainer.style.transition = 'opacity 0.3s ease';
+                optsContainer.style.opacity = 1;
+            }, 100);
+        }
+
+        function handleChoice(option) {
+            // Apply stats
+            stats.boss += option.impact.boss;
+            stats.team += option.impact.team;
+            stats.energy += option.impact.energy;
+            
+            updateStatsUI();
+            showLesson(option);
+        }
+
+        function showLesson(option) {
+            const lesson = option.lesson;
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            
+            // Wait a tick for display:flex to apply before sliding up
+            setTimeout(() => {
+                lessonCard.classList.remove('translate-y-full');
+            }, 10);
+
+            // Update modal content
+            const iconBox = document.getElementById('lesson-icon-box');
+            const icon = document.getElementById('lesson-icon');
+            
+            if (lesson.isGood) {
+                iconBox.className = "w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center text-xl shrink-0";
+                icon.className = "fa-solid fa-check";
+                document.getElementById('lesson-title').innerText = "Tuyệt vời!";
+                document.getElementById('lesson-title').className = "font-bold text-green-700";
+            } else {
+                iconBox.className = "w-10 h-10 rounded-full bg-red-100 text-red-600 flex items-center justify-center text-xl shrink-0";
+                icon.className = "fa-solid fa-triangle-exclamation";
+                document.getElementById('lesson-title').innerText = "Rút kinh nghiệm nhé!";
+                document.getElementById('lesson-title').className = "font-bold text-red-600";
+            }
+
+            document.getElementById('lesson-desc').innerHTML = `<strong>${lesson.title}:</strong><br/>${lesson.desc}`;
+
+            // Render impact tags
+            const tagsBox = document.getElementById('impact-tags');
+            tagsBox.innerHTML = '';
+            
+            if (option.impact.boss !== 0) {
+                const isPos = option.impact.boss > 0;
+                tagsBox.innerHTML += `<span class="${isPos ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'} text-xs px-2 py-1 rounded font-bold">${isPos ? '+' : ''}${option.impact.boss} Sếp</span>`;
+            }
+            if (option.impact.team !== 0) {
+                const isPos = option.impact.team > 0;
+                tagsBox.innerHTML += `<span class="${isPos ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'} text-xs px-2 py-1 rounded font-bold">${isPos ? '+' : ''}${option.impact.team} Team</span>`;
+            }
+            if (option.impact.energy !== 0) {
+                const isPos = option.impact.energy > 0;
+                tagsBox.innerHTML += `<span class="${isPos ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700'} text-xs px-2 py-1 rounded font-bold">${isPos ? '+' : ''}${option.impact.energy} Năng Lượng</span>`;
+            }
+        }
+
+        function nextScenario() {
+            lessonCard.classList.add('translate-y-full');
+            setTimeout(() => {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+                currentDay++;
+                renderScenario();
+            }, 300);
+        }
+
+        function getStatusText(value) {
+            if (value >= 80) return "Xuất sắc";
+            if (value >= 50) return "Khá Tốt";
+            if (value >= 30) return "Cần cố gắng";
+            return "Đáng báo động";
+        }
+
+        function endGame() {
+            statsHeader.classList.add('hidden');
+            switchScreen('result');
+
+            // Evaluate Final State
+            let title = "";
+            let desc = "";
+            let iconClass = "";
+
+            if (stats.boss >= 50 && stats.team >= 50 && stats.energy > 0) {
+                title = "Ký Hợp Đồng Chính Thức!";
+                desc = "Chúc mừng! Bạn đã chứng minh được EQ cao, biết cách xử lý tình huống khéo léo mà không làm mất lòng ai, đồng thời bảo vệ được sức khỏe bản thân.";
+                iconClass = "fa-solid fa-trophy text-6xl text-yellow-400 mb-6 drop-shadow-md";
+            } else if (stats.energy <= 0) {
+                title = "Burnout (Kiệt Sức)!";
+                desc = "Bạn có thể được lòng mọi người nhưng lại quên mất việc bảo vệ bản thân. Dẫn đến stress nặng và xin nghỉ việc giữa chừng. Hãy học cách nói Không nhé.";
+                iconClass = "fa-solid fa-battery-empty text-6xl text-red-500 mb-6 drop-shadow-md";
+            } else {
+                title = "Cần Training Thêm";
+                desc = "Bạn có tiềm năng nhưng cách xử lý còn khá cảm tính. Môi trường công sở cần sự chuyên nghiệp, khéo léo và biết đặt mục tiêu chung lên hàng đầu.";
+                iconClass = "fa-solid fa-book-open-reader text-6xl text-blue-500 mb-6 drop-shadow-md";
+            }
+
+            document.getElementById('final-title').innerText = title;
+            document.getElementById('final-desc').innerText = desc;
+            document.getElementById('final-icon').className = iconClass;
+
+            document.getElementById('res-boss').innerText = getStatusText(stats.boss);
+            document.getElementById('res-team').innerText = getStatusText(stats.team);
+            document.getElementById('res-energy').innerText = getStatusText(stats.energy);
+        }
+    </script>
+</body>
+</html>
